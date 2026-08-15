@@ -1,0 +1,41 @@
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg-info/
+.venv/
+venv/
+env/
+.conda/
+
+# --- IDE / OS ---
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.swp
+
+# --- OpenGLRobot / KUKA assets (do NOT redistribute) ---
+# CAD meshes and scene configs are supplied by the supervisor.
+robot_cad/
+OpenGLRobot/
+*.wrl
+*.stl
+*.step
+*.iges
+
+# Keep this one example config out unless licensing allows it:
+# env/config/KR4_R600_Stud2.xml
+
+# --- Logs / recordings / build output ---
+*.log
+*.wav
+*.flac
+recordings/
+build/
+dist/
+
+# --- Personal / local overrides ---
+local_paths.py
+secrets.env
