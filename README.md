@@ -100,6 +100,7 @@ Rotation: `cw` (clockwise), `acw` (anti-clockwise)
 
 ## Project structure
 
+```
 ControllingIndustrialRobotWithSpeech/
 ├── src/
 │ └── kuka_voice_control_v7.py
@@ -113,6 +114,7 @@ ControllingIndustrialRobotWithSpeech/
 ├── .gitignore
 ├── LICENSE
 └── README.md
+```
 
 
 ## Documentation
