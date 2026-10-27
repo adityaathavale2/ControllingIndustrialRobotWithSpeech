@@ -1,258 +1,149 @@
-================================================================
- CONTROLLING AN INDUSTRIAL ROBOT WITH SPEECH
- KUKA KR4 R600 — Python Voice Control (OpenGLRobot + Real Hardware)
-================================================================
+# Controlling an Industrial Robot with Speech
 
-Course        : Industrial Robotics Laboratory, Summer Semester 2026
-Institution   : Hochschule Ravensburg-Weingarten (RWU), M.Sc. Mechatronics
-Supervisors   : Prof. Dr.-Ing. Konrad Woellhaf, Prof. Thomas Seywald
-Group         : 2B
-Platform      : Windows 10/11 (64-bit)  —  Windows only
+Voice-controlled interface for the **KUKA KR4 R600** industrial robot — 
+Python application that converts spoken commands into robot motion via 
+the OpenGLRobot COM API, validated on both simulation and physical hardware.
 
-----------------------------------------------------------------
- 1. PROJECT OVERVIEW
-----------------------------------------------------------------
-This project investigates how an industrial robot can be
-controlled using natural spoken language. A Python application
-listens to the operator, converts speech to text with Google
-Speech Recognition, normalises the phrase, and drives the KUKA
-KR4 R600 through the OpenGLRobot COM API. The same script has
-been validated both in simulation (OpenGLRobot 3D CAD window)
-and on the physical KUKA KR4 R600 in the RWU robotics lab.
+![Dashboard screenshot or hero image](results/dashboard.png)
 
-The application answers the five questions posed by the
-assignment:
+## Overview
 
-  - Whether and how a robot can be controlled by voice
-  - Which commands are necessary for a usable workflow
-  - How performant the application must be (latency budget)
-  - How safety is guaranteed (halt words, joint-limit checks,
-    step-size clamping, wake-word gating)
-  - How well an inexperienced user can cope with the system
-    (evaluated in the accompanying Statistics Report)
+How well can a 6-axis industrial robot be driven by natural spoken 
+language, and what does it cost in latency, accuracy, and safety?
 
-----------------------------------------------------------------
- 2. KEY FEATURES
-----------------------------------------------------------------
-  - Wake-word gated activation ("hello" / "hallo")
-  - Four coordinate modes: WORLD, BASE, AXIS, TCP
-  - Two motion types: LIN (linear) and PTP (point-to-point)
-  - Three speed presets: LOW 25 %, MID 50 %, HIGH 100 %
-  - Global HALT / STOP recognised in every state
-  - Tkinter dashboard with:
-      * live TCP pose and joint-angle readout
-      * scrollable voice-command reference
-      * activity log with colour-coded severity
-      * manual-typing fallback and one-click quick buttons
-      * prominent LISTENING / IDLE microphone badge
-  - Phonetic-variant tables that repair common Google STT
-    mishearings (e.g. "cord in eight" -> "coordinate",
-    "bass" -> "base", "ay one" -> "a1")
-  - Joint-limit checks before every axis rotation
-  - CAD window auto-raise and always-on-top pinning
-  - Zero-latency fast path via GUI buttons and text entry
-    (bypasses the microphone entirely)
+This project builds a Python application that:
+- Listens for a wake word, converts speech to text via Google STT
+- Normalises the phrase against phonetic variants
+- Drives the KUKA KR4 R600 through the OpenGLRobot COM API
+- Enforces hard safety constraints (halt words, joint limits, step clamps)
 
-----------------------------------------------------------------
- 3. REPOSITORY LAYOUT
-----------------------------------------------------------------
-  ControllingIndustrialRobotWithSpeech/
-  |
-  |-- src/
-  |     kuka_voice_control_v7.py     Main application
-  |
-  |-- docs/
-  |     Controlling_an_Industrial_Robot_with_Speech_updated.pdf
-  |     KUKA_VoiceControl_Report_(konrad_meeting).pdf
-  |     KUKA_VoiceControl_SOP.docx   Standard Operating Procedure
-  |     Offline_Implementation_Plan.pdf   Vosk migration proposal
-  |     Statistics_Report.pdf        Recognition-performance study
-  |
-  |-- config_examples/
-  |     KR4_R600_Stud2.xml           (only if licence permits)
-  |
-  |-- requirements.txt
-  |-- .gitignore
-  |-- LICENSE
-  |-- README.txt                     (this file)
+Developed as coursework for **Industrial Robotics Laboratory**, 
+M.Sc. Mechatronics at Ravensburg-Weingarten University of Applied Sciences (RWU).
 
-  NOTE  —  The OpenGLRobot executable, its installer, and the
-  robot_cad/ mesh folder are provided by the course supervisor
-  and are NOT redistributed in this repository. Obtain them
-  from the shared project drive before running the script.
+## Key features
 
-----------------------------------------------------------------
- 4. SYSTEM REQUIREMENTS
-----------------------------------------------------------------
-  - Windows 10 or 11 (64-bit).  Does not run on macOS / Linux.
-  - Python 3.11.x (64-bit).  Add Python to PATH during install.
-  - OpenGLRobot with the COM component
-    "openglrobot.RobotWindowApi" registered.
-  - Working microphone recognised by Windows Sound settings.
-  - Internet connection (Google Speech-to-Text is a cloud call).
-  - Optional: KUKA KR4 R600 hardware for live-robot demo.
+| Feature | Detail |
+|---|---|
+| Wake-word activation | "hello" / "hallo" required before any motion |
+| Coordinate modes | WORLD, BASE, AXIS, TCP |
+| Motion types | LIN (linear) and PTP (point-to-point) |
+| Speed presets | LOW (25%), MID (50%), HIGH (100%) |
+| Safety halt | Global "halt" / "stop" recognised in every state |
+| Dashboard | Tkinter GUI with live pose, command reference, activity log |
+| Fallback input | Manual typing + one-click quick buttons |
 
-----------------------------------------------------------------
- 5. INSTALLATION
-----------------------------------------------------------------
-  Step 1  —  Install Python 3.11.x from https://python.org
-             (ensure "Add Python to PATH" is ticked).
+## System requirements
 
-  Step 2  —  Install Python dependencies:
+- Windows 10 or 11 (64-bit) — Windows only (does not run on macOS/Linux)
+- Python 3.11.x (64-bit)
+- OpenGLRobot with COM component `openglrobot.RobotWindowApi` registered
+- Working microphone
+- Internet connection (Google STT is a cloud call)
 
-               pip install -r requirements.txt
+## Installation
 
-             or, individually:
+```bash
+pip install -r requirements.txt
+```
 
-               pip install SpeechRecognition sounddevice
-               pip install pywin32 numpy
+Then install OpenGLRobot from official course channels and place the 
+provided config and CAD assets as described in the Configuration section.
 
-  Step 3  —  Install OpenGLRobot from the course share.
-             If COM errors appear on launch, reinstall the
-             OpenGLRobot MSI as Administrator so the COM
-             object is registered correctly.
+## Voice command reference
 
-  Step 4  —  Place the supplied files as follows:
+### Wake / system
+| Command | Action |
+|---|---|
+| hello / hallo | Activate the robot |
+| halt / stop | Freeze motion, exit current state |
+| home | Return to home pose |
+| switch / change | Open sub-menu (coord / speed / motion) |
 
-               <yourpath>\OpenGLRobot\env\config\KR4_R600_Stud2.xml
-               <yourpath>\OpenGLRobot\robot_cad\
+### Coordinate selection
+`world` · `base` · `axis` · `tcp`
 
-----------------------------------------------------------------
- 6. CONFIGURATION
-----------------------------------------------------------------
-Open src\kuka_voice_control_v7.py and update the two path
-constants near the top of the file to match the machine:
+### WORLD and BASE mode
+Directions: `forward`, `backward`, `left`, `right`, `up`, `down`  
+Axes: `x+/x-`, `y+/y-`, `z+/z-`
 
-  XML_CONFIG    = r"D:\...\OpenGLRobot\env\config\KR4_R600_Stud2.xml"
-  CAD_FOLDER    = r"D:\...\OpenGLRobot\robot_cad"
+### AXIS mode
+`a1 .. a6` (or "axis one" .. "axis six")  
+Rotation: `cw` (clockwise), `acw` (anti-clockwise)
 
-Always keep the leading  r  before the string so Windows
-backslashes are treated literally. No other edits are needed.
+### TCP mode
+`tool 1`, `tool 2`
 
-----------------------------------------------------------------
- 7. RUNNING
-----------------------------------------------------------------
-  cd <project_folder>\src
-  python kuka_voice_control_v7.py
+## Safety model
 
-On a successful launch two windows appear:
+- Wake-word gating — no movement before "hello"
+- Global halt — "halt" / "stop" recognised in every state including sub-menus
+- Step-size clamps per speed preset: 10/20/50 mm linear, 2/5/10° angular
+- Joint-limit check before every axis rotation
+- HOME pose validation on startup
+- Manual override via GUI always available
 
-  - The Tkinter dashboard (control GUI)
-  - The OpenGLRobot 3D CAD window (auto-pinned on top)
+## Known limitations
 
-The Activity Log will show:
+- Google STT requires internet; adds ~1-2 s latency per command
+- `moveRobotLinear()` is always world-referenced; BASE mode applies 
+  explicit `R = Rz @ Ry @ Rx` rotation
+- Windows only (pywin32 and OpenGLRobot dependencies)
 
-  [OK]  Robot + CAD READY
-  [OK]  CAD window pinned always-on-top.
-  [SYS] Listening for wake word...
+## Project structure
 
-Say "hello" (or "hallo") to activate the robot. From there,
-select a coordinate mode and issue movement commands.
+## Known limitations
 
-----------------------------------------------------------------
- 8. VOICE COMMAND REFERENCE (SUMMARY)
-----------------------------------------------------------------
-  WAKE / SYSTEM
-    hello / hallo ....... activate
-    halt / stop ......... freeze motion, exit current state
-    home ................ return to home pose
-    switch / change ..... open sub-menu (coord / speed / motion)
+- Google STT requires internet; adds ~1-2 s latency per command
+- `moveRobotLinear()` is always world-referenced; BASE mode applies 
+  explicit `R = Rz @ Ry @ Rx` rotation
+- Windows only (pywin32 and OpenGLRobot dependencies)
 
-  COORDINATE SELECTION
-    world | base | axis | tcp
+## Project structure
 
-  WORLD  and  BASE  mode  (directions)
-    forward | backward (back) | left | right | up | down
-    x+ / x-  y+ / y-  z+ / z-
+ControllingIndustrialRobotWithSpeech/
+├── src/
+│ └── kuka_voice_control_v7.py
+├── docs/
+│ ├── Final_Report.pdf
+│ ├── Interim_Report.pdf
+│ ├── Statistics_Report.pdf
+│ ├── SOP.docx
+│ └── Offline_Implementation_Plan.pdf
+├── requirements.txt
+├── .gitignore
+├── LICENSE
+└── README.md
 
-  AXIS mode
-    a1 .. a6      (or "axis one" .. "axis six")
-    cw            rotate clockwise
-    acw           rotate anti-clockwise
 
-  TCP mode
-    tool 1 | tool 2
+## Documentation
 
-  DIRECT SHORTCUTS (any mode, no "switch" needed)
-    low | mid | high        change speed
-    lin | ptp               change motion type
-    home                    go to home
+- **Final Report** — motivation, method, results
+- **Interim Report** — technical progress presented to supervisor
+- **Statistics Report** — recognition-accuracy study with histograms
+- **SOP** — Standard Operating Procedure
+- **Offline Implementation Plan** — Vosk migration proposal
 
-A full, scrollable list of every recognised phrase is shown
-inside the dashboard's "Voice Command Reference" panel.
+## Authors
 
-----------------------------------------------------------------
- 9. SAFETY MODEL
-----------------------------------------------------------------
-  - Wake-word gating: no movement is executed before "hello".
-  - Global halt: "halt" / "stop" is recognised in every state,
-    including inside sub-menus.
-  - Hard step-size clamps per speed preset (10 / 20 / 50 mm
-    linear; 2 / 5 / 10 degrees per axis command).
-  - Joint-limit check: rotations are refused when the next
-    angle would fall outside getJointMin / getJointMax.
-  - HOME sentinel: the first pose read is validated so the
-    script never issues a move from an unknown TCP.
-  - Manual override: buttons and text entry always work,
-    so the operator is never trapped by a bad recogniser.
+- **Aditya Athavale** — Axis coordinate system, system integration
+- **[Groupmate 2]** — Base coordinate system
+- **[Groupmate 3]** — TCP coordinate system
 
-----------------------------------------------------------------
- 10. KNOWN LIMITATIONS
-----------------------------------------------------------------
-  - Google STT requires an internet connection and adds
-    roughly 1 - 2 seconds of latency per command. An offline
-    Vosk-based v8 is documented in Offline_Implementation_Plan.pdf.
-  - moveRobotLinear() is always world-referenced. Base mode
-    performs an explicit R = Rz @ Ry @ Rx rotation on the
-    direction vector to obtain the correct base-frame motion.
-  - Windows only, because both pywin32 and OpenGLRobot are
-    Windows-specific.
+M.Sc. Mechatronics, Hochschule Ravensburg-Weingarten (RWU)
 
-----------------------------------------------------------------
- 11. DOCUMENTATION INDEX
-----------------------------------------------------------------
-  docs/Controlling_an_Industrial_Robot_with_Speech_updated.pdf
-      Final project report — motivation, method, results.
+## Acknowledgements
 
-  docs/KUKA_VoiceControl_Report_(konrad_meeting).pdf
-      Interim technical report presented to Prof. Woellhaf.
+Prof. Dr.-Ing. Konrad Woellhaf and Prof. Thomas Seywald for supervision 
+and hardware access.
 
-  docs/KUKA_VoiceControl_SOP.docx
-      Standard Operating Procedure — install, run, shut down.
+## Licence
 
-  docs/Statistics_Report.pdf
-      Recognition-accuracy study with histograms and
-      per-command reliability figures.
+Academic use only. The OpenGLRobot simulator, KR4_R600_Stud2.xml scene, 
+and robot_cad meshes are the property of their respective owners and 
+are not covered by this repository.
 
-  docs/Offline_Implementation_Plan.pdf
-      Migration plan for replacing Google STT with Vosk.
+## Author
 
-----------------------------------------------------------------
- 12. AUTHORS
-----------------------------------------------------------------
-  Aditya Athavale    (Axis coordinate system, integration)
-  <Piyush Mehta>    (Base coordinate system)
-  <Krishna Bhuva>    (TCP coordinate system)
+Aditya Athavale — M.Sc. Mechatronics, Ravensburg-Weingarten University of Applied Sciences
 
-  M.Sc. Mechatronics, Hochschule Ravensburg-Weingarten (RWU)
-  Industrial Robotics Laboratory, Summer Semester 2026
-
-----------------------------------------------------------------
- 13. LICENCE AND USE
-----------------------------------------------------------------
-This code is released for academic and educational use in
-connection with the RWU Industrial Robotics Laboratory. The
-OpenGLRobot simulator, the KR4_R600_Stud2.xml scene, and the
-robot_cad meshes are the property of their respective owners
-and are NOT covered by this repository. Obtain them from the
-course supervisor before running the software.
-
-----------------------------------------------------------------
- 14. ACKNOWLEDGEMENTS
-----------------------------------------------------------------
-  Prof. Dr.-Ing. Konrad Woellhaf and Prof. Thomas Seywald for
-  supervision, hardware access, and the OpenGLRobot toolchain.
-
-================================================================
- END OF README
-================================================================
+[GitHub](https://github.com/adityaathavale2) · [LinkedIn](https://www.linkedin.com/in/adityaathavale/)
