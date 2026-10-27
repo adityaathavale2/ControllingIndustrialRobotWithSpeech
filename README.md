@@ -4,8 +4,6 @@ Voice-controlled interface for the **KUKA KR4 R600** industrial robot —
 Python application that converts spoken commands into robot motion via 
 the OpenGLRobot COM API, validated on both simulation and physical hardware.
 
-![Dashboard screenshot or hero image](results/dashboard.png)
-
 ## Overview
 
 How well can a 6-axis industrial robot be driven by natural spoken 
